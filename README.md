@@ -7,6 +7,13 @@ It targets the two USB modes:
 
 HyperSpeed dongle: 1532:02D2
 Wired keyboard: 1532:02D4
+
+## Tested on
+
+- Ubuntu 24.04 (noble)
+- OpenRazer 3.12.2 (`openrazer-driver-dkms` / `openrazer-daemon`)
+- Kernel 6.17.x
+
 What it does
 Patches OpenRazer DKMS driver (razerkbd) to add 0x02D2/0x02D4 (modalias + binding).
 Patches OpenRazer daemon to recognize the device in keyboards.py.
@@ -20,3 +27,26 @@ openrazer, razer, blackwidow, linux, ubuntu, dkms, polychromatic, rgb, keyboard
 
 Suggested GitHub Release note (optional)
 Tested: Ubuntu 24.04 (noble), OpenRazer 3.12.2, kernel 6.17.x.
+
+## Rollback / uninstall
+
+This repo patches system files (DKMS sources, udev rules, Python dist-packages). To revert:
+
+- Remove the udev override:
+
+```bash
+sudo rm -f /etc/udev/rules.d/99-razer.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger --action=add --subsystem-match=hid --attr-match=idVendor=1532
+```
+
+- Reinstall stock OpenRazer packages (restores daemon files) and rebuild DKMS:
+
+```bash
+sudo apt update
+sudo apt install --reinstall -y openrazer-daemon python3-openrazer openrazer-driver-dkms
+sudo dkms remove openrazer-driver/3.12.2 --all || true
+sudo dkms install openrazer-driver/3.12.2 -k "$(uname -r)"
+```
+
+- Replug your devices and restart the daemon.
